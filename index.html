@@ -135,12 +135,50 @@
             color: #cbd5e1;
             border-left: 4px solid #38bdf8;
         }
+
+        /* Liderlik Tablosu Stilleri */
+        .leaderboard {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .leaderboard h3 {
+            color: #f59e0b;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            background: #0f172a;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            border: 1px solid #334155;
+        }
+
+        .leaderboard-item .rank {
+            font-weight: bold;
+            color: #38bdf8;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- 1. Aşama: Kullanıcı Adı Girişi -->
+        <!-- 1. Aşama: Kullanıcı Adı Girişi & Liderlik Tablosu -->
         <div id="welcome-screen">
             <h1>Hoş Geldiniz</h1>
             <p class="sub-title">Testi çözmeye başlamak için lütfen adınızı giriniz.</p>
@@ -148,6 +186,14 @@
                 <input type="text" id="username" placeholder="Kullanıcı Adınız" autocomplete="off">
             </div>
             <button onclick="startQuiz()">Teste Başla</button>
+
+            <!-- Liderlik Tablosu -->
+            <div class="leaderboard">
+                <h3>🏆 Sıralama (Liderlik Tablosu)</h3>
+                <ul id="leaderboard-list" class="leaderboard-list">
+                    <li style="color: #94a3b8; text-align: center; font-size: 0.85rem;">Henüz kayıtlı bir skor yok.</li>
+                </ul>
+            </div>
         </div>
 
         <!-- 2. Aşama: Sorular -->
@@ -155,7 +201,7 @@
             <p id="author-note" style="color: #f59e0b; font-size: 0.9rem; margin-bottom: 10px; font-weight: 600;">
                 Bu sorular doğrudan Atakandan gelmektedir
             </p>
-            <div class="progress" id="progress-text">Soru 1 / 11</div>
+            <div class="progress" id="progress-text">Soru 1 / 12</div>
             <h2 id="question-title">Soru Metni</h2>
             
             <div id="options-container" class="options-grid"></div>
@@ -171,12 +217,14 @@
             <h1>Tebrikler! <span id="final-username"></span></h1>
             <p class="sub-title">Testi başarıyla tamamladın.</p>
             
-            <div class="score-box" id="score-display">Skorun: 0 / 11</div>
+            <div class="score-box" id="score-display">Skorun: 0 / 12</div>
 
             <div id="user-description-result" class="user-text-output" style="display: none;">
                 <strong>Atakan hakkındaki düşüncen:</strong>
                 <p id="user-description-text"></p>
             </div>
+
+            <button onclick="location.reload()" style="margin-top: 20px;">Ana Sayfaya Dön</button>
         </div>
     </div>
 
@@ -247,6 +295,9 @@
         let score = 0;
         let userName = "";
 
+        // Sayfa yüklendiğinde liderlik tablosunu göster
+        document.addEventListener("DOMContentLoaded", updateLeaderboardDisplay);
+
         function startQuiz() {
             const input = document.getElementById("username");
             if (input.value.trim() === "") {
@@ -300,7 +351,6 @@
                     document.getElementById("user-description-text").innerText = userText;
                     document.getElementById("user-description-result").style.display = "block";
                 }
-                // Son açık uçlu soru da cevaplandığı için puan verilebilir (isteğe bağlı skor artırma)
                 score++; 
             }
 
@@ -317,7 +367,44 @@
             document.getElementById("quiz-screen").style.display = "none";
             document.getElementById("result-screen").style.display = "block";
             document.getElementById("final-username").innerText = userName;
-            document.getElementById("score-display").innerText = `Skorun: ${score} / 11`;
+            document.getElementById("score-display").innerText = `Skorun: ${score} / ${questions.length}`;
+
+            // Skoru kaydet ve sıralamayı güncelle
+            saveScore(userName, score);
+        }
+
+        function saveScore(name, userScore) {
+            let scores = JSON.parse(localStorage.getItem("atakanQuizScores")) || [];
+            
+            // Kullanıcının skorunu ekle
+            scores.push({ name: name, score: userScore });
+
+            // Skorları en yüksekten en düşüğe doğru sırala
+            scores.sort((a, b) => b.score - a.score);
+
+            // Yerel hafızaya kaydet
+            localStorage.setItem("atakanQuizScores", JSON.stringify(scores));
+        }
+
+        function updateLeaderboardDisplay() {
+            let scores = JSON.parse(localStorage.getItem("atakanQuizScores")) || [];
+            const leaderboardList = document.getElementById("leaderboard-list");
+
+            if (scores.length === 0) {
+                leaderboardList.innerHTML = '<li style="color: #94a3b8; text-align: center; font-size: 0.85rem;">Henüz kayıtlı bir skor yok.</li>';
+                return;
+            }
+
+            leaderboardList.innerHTML = "";
+            scores.forEach((entry, index) => {
+                const li = document.createElement("li");
+                li.className = "leaderboard-item";
+                li.innerHTML = `
+                    <span><span class="rank">${index + 1}.</span>${entry.name}</span>
+                    <strong style="color: #4ade80;">${entry.score} Puan</strong>
+                `;
+                leaderboardList.appendChild(li);
+            });
         }
     </script>
 </body>
